@@ -37,6 +37,8 @@
 
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
+#include "Headers/Terrain.h"
+
 int screenWidth;
 int screenHeight;
 
@@ -101,7 +103,7 @@ Model cyborgModelAnimate;
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
-
+Terrain terrain(-1,-1,200,40,"../Textures/heightmap2.png");
 GLenum types[6] = {
 GL_TEXTURE_CUBE_MAP_POSITIVE_X,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -362,6 +364,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cyborgModelAnimate.loadModel("../models/cyborg/cyborg.fbx");
 	cyborgModelAnimate.setShader(&shaderMulLighting);
 
+	terrain.init();
+	terrain.setShader(&shaderMulLighting);
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
 	// Carga de texturas para el skybox
@@ -577,6 +581,7 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
+	terrain.destroy();
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -914,7 +919,9 @@ void applicationLoop() {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureCespedID);
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(200, 200)));
-		boxCesped.render(modelCesped);
+		//boxCesped.render(modelCesped);
+		terrain.setPosition(glm::vec3(100,0,100));
+		terrain.render();
 		shaderMulLighting.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(0, 0)));
 		glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -922,17 +929,46 @@ void applicationLoop() {
 		 * Custom objects obj
 		 *******************************************/
 		//Rock render
+		matrixModelRock[3].y = terrain.getHeightTerrain(matrixModelRock[3].x,matrixModelRock[3].z);
 		modelRock.render(matrixModelRock);
 		// Forze to enable the unit texture to 0 always ----------------- IMPORTANT
 		glActiveTexture(GL_TEXTURE0);
 
 		// Render for the aircraft model
+		modelMatrixAircraft[3].y = terrain.getHeightTerrain(modelMatrixAircraft[3].x,modelMatrixAircraft[3].z) +5.0f;
 		modelAircraft.render(modelMatrixAircraft);
 
 		// Render for the eclipse car
+		
+		modelMatrixEclipse[3].y = terrain.getHeightTerrain(modelMatrixEclipse[3].x,modelMatrixEclipse[3].z);
+
 		glm::mat4 modelMatrixEclipseChasis = glm::mat4(modelMatrixEclipse);
+		glm::vec4 eclipseFrontalWheelLeft = glm::translate(modelMatrixEclipseChasis,glm::vec3(2.45,0,4.12163))[3];
+		glm::vec4 eclipseFrontalWheelRight = glm::translate(modelMatrixEclipseChasis,glm::vec3(-2.45,0,4.12163))[3];
+		glm::vec4 eclipseRearWheelLeft = glm::translate(modelMatrixEclipseChasis,glm::vec3(2.45,0,-4.12163))[3];
+		glm::vec4 eclipseRearWheelRight = glm::translate(modelMatrixEclipseChasis,glm::vec3(-2.45,0,-4.12163))[3];
+
+		eclipseFrontalWheelLeft.y = terrain.getHeightTerrain(eclipseFrontalWheelLeft.x,eclipseFrontalWheelLeft.z);
+		eclipseFrontalWheelRight.y = terrain.getHeightTerrain(eclipseFrontalWheelRight.x,eclipseFrontalWheelRight.z);
+		eclipseRearWheelLeft.y = terrain.getHeightTerrain(eclipseRearWheelLeft.x,eclipseRearWheelLeft.z);
+		eclipseRearWheelRight.y = terrain.getHeightTerrain(eclipseRearWheelRight.x,eclipseRearWheelRight.z);
+		
+		glm::vec3 uVec = eclipseFrontalWheelLeft-eclipseRearWheelLeft;
+		glm::vec3 vVec = eclipseFrontalWheelRight-eclipseRearWheelLeft;
+		glm::vec4 eje_y = glm::vec4(glm::normalize(glm::cross(uVec,vVec)),0);
+		glm::vec4 eje_x = modelMatrixEclipse[0];
+		glm::vec4 eje_z = glm::vec4(glm::normalize(glm::cross(glm::vec3(eje_x),glm::vec3(eje_y))),0);
+
+		eje_x = glm::vec4(glm::normalize(glm::cross(glm::vec3(eje_y),glm::vec3(eje_z))),0);
+		
+		modelMatrixEclipse[0] = eje_x;
+		modelMatrixEclipse[1] = eje_y;
+		modelMatrixEclipse[2] = eje_z;
+		/////glm::mat4 modelMatrixEclipseChasis = glm::mat4(modelMatrixEclipse);
+
 		modelMatrixEclipseChasis = glm::scale(modelMatrixEclipse, glm::vec3(0.5, 0.5, 0.5));
 		modelEclipseChasis.render(modelMatrixEclipseChasis);
+	
 
 		glm::mat4 modelMatrixFrontalWheels = glm::mat4(modelMatrixEclipseChasis);
 		modelMatrixFrontalWheels = glm::translate(modelMatrixFrontalWheels, glm::vec3(0.0, 1.05813, 4.11483 ));
@@ -984,6 +1020,7 @@ void applicationLoop() {
 		// Dart lego
 		// Se deshabilita el cull faces IMPORTANTE para la capa
 		glDisable(GL_CULL_FACE);
+		modelMatrixDart[3].y = terrain.getHeightTerrain(modelMatrixDart[3].x,modelMatrixDart[3].z);
 		glm::mat4 modelMatrixDartBody = glm::mat4(modelMatrixDart);
 		modelMatrixDartBody = glm::scale(modelMatrixDartBody, glm::vec3(0.5, 0.5, 0.5));
 		modelDartLegoBody.render(modelMatrixDartBody);
@@ -1032,7 +1069,7 @@ void applicationLoop() {
 		// Se regresa el cull faces IMPORTANTE para la capa
 		glEnable(GL_CULL_FACE);
 
-		
+		modelMatrixBuzz[3].y = terrain.getHeightTerrain(modelMatrixBuzz[3].x,modelMatrixBuzz[3].z);
 		glm::mat4 modelMatrixTorso = glm::mat4(modelMatrixBuzz);
 		modelMatrixTorso = glm::scale(modelMatrixTorso, glm::vec3(3.0));
 		modelBuzzTorso.render(modelMatrixTorso);
@@ -1066,6 +1103,7 @@ void applicationLoop() {
 		/*****************************************
 		 * Objetos animados por huesos
 		 * **************************************/
+		modelMatrixMayow[3].y = terrain.getHeightTerrain(modelMatrixMayow[3].x,modelMatrixMayow[3].z);
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
 		mayowModelAnimate.setAnimationIndex(animationMayowIndex);
