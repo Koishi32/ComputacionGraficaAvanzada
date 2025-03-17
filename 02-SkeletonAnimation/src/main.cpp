@@ -95,6 +95,9 @@ Model modelBuzzLeftArm;
 Model modelBuzzLeftForeArm;
 Model modelBuzzLeftHand;
 
+//NewModels
+Model CarlModelAnimate; 
+
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
 
@@ -106,12 +109,12 @@ GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
 GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-std::string fileNames[6] = { "../Textures/mp_bloodvalley/blood-valley_ft.tga",
-		"../Textures/mp_bloodvalley/blood-valley_bk.tga",
-		"../Textures/mp_bloodvalley/blood-valley_up.tga",
-		"../Textures/mp_bloodvalley/blood-valley_dn.tga",
-		"../Textures/mp_bloodvalley/blood-valley_rt.tga",
-		"../Textures/mp_bloodvalley/blood-valley_lf.tga" };
+std::string fileNames[6] = { "../Textures/newSky/skybox1/4.png",
+		"../Textures/newSky/skybox1/5.png",
+		"../Textures/newSky/skybox1/6.png",
+		"../Textures/newSky/skybox1/1.png",
+		"../Textures/newSky/skybox1/2.png",
+		"../Textures/newSky/skybox1/3.png" };
 
 bool exitApp = false;
 int lastMousePosX, offsetX = 0;
@@ -129,6 +132,7 @@ glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCarl = glm::mat4(1.0f);
 
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftArm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
@@ -351,6 +355,11 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelCyborg.setShader(&shaderMulLighting);
 
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
+
+	//Robot Model Animate
+
+	CarlModelAnimate.loadModel("../models/robot/model.fbx"); 
+	CarlModelAnimate.setShader(&shaderMulLighting);
 	
 	// Carga de texturas para el skybox
 	Texture skyboxTexture = Texture("");
@@ -565,6 +574,8 @@ void destroy() {
 	modelGuardianAnimate.destroy();
 	modelMayowAnimate.destroy();
 	modelCyborg.destroy();
+	CarlModelAnimate.destroy(); 
+
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -772,20 +783,23 @@ bool processInput(bool continueApplication) {
 
 	if(modelSelected==0 && glfwGetKey(window,GLFW_KEY_LEFT))
 	{
-		modelMatrixMayow = glm::rotate(modelMatrixMayow,0.02f,glm::vec3(0,1,0));
-		modelMayowAnimate.setAnimationIndex(0);
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,0.02f,glm::vec3(0,1,0));
+		CarlModelAnimate.setAnimationIndex(2);
 	} 
 	if(modelSelected==0 && glfwGetKey(window,GLFW_KEY_RIGHT)){
-		modelMatrixMayow = glm::rotate(modelMatrixMayow,-0.02f,glm::vec3(0,1,0));
-		modelMayowAnimate.setAnimationIndex(0);
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,-0.02f,glm::vec3(0,1,0));
+		CarlModelAnimate.setAnimationIndex(2);
 	}
 	if(modelSelected==0 && glfwGetKey(window,GLFW_KEY_UP)){
-		modelMatrixMayow = glm::translate(modelMatrixMayow,glm::vec3(0,0,0.2));
-		modelMayowAnimate.setAnimationIndex(0);
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,0.02));
+		CarlModelAnimate.setAnimationIndex(0);
 	}
 	if(modelSelected==0 && glfwGetKey(window,GLFW_KEY_DOWN)){
-		modelMatrixMayow = glm::translate(modelMatrixMayow,glm::vec3(0,0,0.2));
-		modelMayowAnimate.setAnimationIndex(0);
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,-0.02));
+		CarlModelAnimate.setAnimationIndex(0);
+	}
+	if(modelSelected==0 && !glfwGetKey(window,GLFW_KEY_DOWN) && !glfwGetKey(window,GLFW_KEY_UP) ){
+		CarlModelAnimate.setAnimationIndex(2);
 	}
 	glfwPollEvents();
 	return continueApplication;
@@ -826,6 +840,7 @@ void applicationLoop() {
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg,glm::vec3(5.0,0.05,0.0));
 
+	modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(2.0,0.16,0.0));
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -1170,8 +1185,13 @@ void applicationLoop() {
 
 		modelMayowAnimate.render(glm::scale(modelMatrixMayow,glm::vec3(0.021)));
 		modelCyborg.setAnimationIndex(1);
-
+		
 		modelCyborg.render(glm::scale(modelMatrixCyborg,glm::vec3(0.01)));
+
+		////Carlbot
+		glm::mat4 modelMatrixCarlBody = glm::mat4(modelMatrixCarl);
+		CarlModelAnimate.render(modelMatrixCarlBody); 
+
 		/*******************************************
 		 * Skybox
 		 *******************************************/
