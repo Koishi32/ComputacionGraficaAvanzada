@@ -101,6 +101,9 @@ Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
 
+//NewModels
+Model CarlModelAnimate; 
+
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
 Terrain terrain(-1,-1,200,40,"../Textures/heightmap2.png");
@@ -135,6 +138,8 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCarl = glm::mat4(1.0f);
+
 
 int animationMayowIndex = 1;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
@@ -368,6 +373,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	terrain.setShader(&shaderMulLighting);
 	camera->setPosition(glm::vec3(0.0, 3.0, 4.0));
 	
+    //Robot Model Animate
+	CarlModelAnimate.loadModel("../models/robot/model.fbx"); 
+	CarlModelAnimate.setShader(&shaderMulLighting);
+
 	// Carga de texturas para el skybox
 	Texture skyboxTexture = Texture("");
 	glGenTextures(1, &skyboxTextureID);
@@ -581,7 +590,8 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
-	terrain.destroy();
+    CarlModelAnimate.destroy(); 
+	terrain.destroy();    
 
 	// Textures Delete
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -702,6 +712,7 @@ bool processInput(bool continueApplication) {
 		availableSave = true;
 
 	// Dart Lego model movements
+    /*
 	if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE &&
 			glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		rotDartHead += 0.02;
@@ -744,6 +755,7 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 1 && glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
 			glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
 		rotDartRightLeg -= 0.02;
+    */
 	if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 		modelMatrixDart = glm::rotate(modelMatrixDart, 0.02f, glm::vec3(0, 1, 0));
 	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
@@ -788,6 +800,7 @@ bool processInput(bool continueApplication) {
 		modelMatrixBuzz = glm::translate(modelMatrixBuzz, glm::vec3(0.0, 0.0, -0.02));
 
 	// Controles de mayow
+    
 	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
 		modelMatrixMayow = glm::rotate(modelMatrixMayow, 0.02f, glm::vec3(0, 1, 0));
 		animationMayowIndex = 0;
@@ -803,7 +816,29 @@ bool processInput(bool continueApplication) {
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
 		animationMayowIndex = 0;
 	}
+    
+    // Controles robot carl
 
+    if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_LEFT))
+	{
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,0.02f,glm::vec3(0,1,0));
+		CarlModelAnimate.setAnimationIndex(2);
+	} 
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_RIGHT)){
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,-0.02f,glm::vec3(0,1,0));
+		CarlModelAnimate.setAnimationIndex(2);
+	}
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_UP)){
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,0.02));
+		CarlModelAnimate.setAnimationIndex(0);
+	}
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_DOWN)){
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,-0.02));
+		CarlModelAnimate.setAnimationIndex(0);
+	}
+	if(modelSelected==1 && !glfwGetKey(window,GLFW_KEY_DOWN) && !glfwGetKey(window,GLFW_KEY_UP) ){
+		CarlModelAnimate.setAnimationIndex(2);
+	}
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -842,6 +877,9 @@ void applicationLoop() {
 	modelMatrixGuardian = glm::rotate(modelMatrixGuardian, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
+
+    modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(2.0,0.16,0.0));
+
 
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
@@ -968,7 +1006,28 @@ void applicationLoop() {
 
 		modelMatrixEclipseChasis = glm::scale(modelMatrixEclipse, glm::vec3(0.5, 0.5, 0.5));
 		modelEclipseChasis.render(modelMatrixEclipseChasis);
-	
+
+        ////Carlbot
+        //Calculate normals for changing direction 
+
+        glm::vec3 ejey = glm::normalize(terrain.getNormalTerrain(modelMatrixCarl[3][0], modelMatrixCarl[3][2]));
+        glm::vec3 ejex = glm::vec3(modelMatrixCarl[0]);
+        glm::vec3 ejez = glm::normalize(glm::cross(ejex, ejey));
+        ejex = glm::normalize(glm::cross(ejey, ejez));
+        modelMatrixCarl[0] = glm::vec4(ejex, 0.0);
+        modelMatrixCarl[1] = glm::vec4(ejey, 0.0);
+        modelMatrixCarl[2] = glm::vec4(ejez, 0.0);
+        
+        // Test if modelMatrixCarl is a vector or if y returns the vector (x,y,z)
+        
+        modelMatrixCarl[3][1] = terrain.getHeightTerrain(modelMatrixCarl[3][0], modelMatrixCarl[3][2]);
+        modelMatrixCarl[3].y = terrain.getHeightTerrain(modelMatrixCarl[3].x,modelMatrixCarl[3].z);
+		
+        glm::mat4 modelMatrixCarlBody = glm::mat4(modelMatrixCarl);
+        modelMatrixCarlBody = glm::scale(modelMatrixCarlBody,glm::vec3(1.0f));
+		CarlModelAnimate.render(modelMatrixCarlBody);
+
+        //wheels calculate normals
 
 		glm::mat4 modelMatrixFrontalWheels = glm::mat4(modelMatrixEclipseChasis);
 		modelMatrixFrontalWheels = glm::translate(modelMatrixFrontalWheels, glm::vec3(0.0, 1.05813, 4.11483 ));
