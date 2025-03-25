@@ -15,7 +15,7 @@ void main()
 {
 	mat4 boneTransform;
 	if(numBones > 0){
-		boneTransform = bones[boneIDs[0]] * weights[0];
+		boneTransform += bones[boneIDs[0]] * weights[0];
 		boneTransform += bones[boneIDs[1]] * weights[1];
 		boneTransform += bones[boneIDs[2]] * weights[2];
 		boneTransform += bones[boneIDs[3]] * weights[3];

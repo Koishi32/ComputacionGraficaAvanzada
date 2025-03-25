@@ -1024,16 +1024,16 @@ void applicationLoop() {
 		shaderTerrain.setInt("backgroundTexture",0);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D,textureRID);
-		shaderTerrain.setInt("textureR",1);
+		shaderTerrain.setInt("rTexture",1);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, textureGID);
-		shaderTerrain.setInt("textureG",2);
+		shaderTerrain.setInt("gTexture",2);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D,textureBID);
-		shaderTerrain.setInt("textureB",3);
+		shaderTerrain.setInt("bTexture",3);
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D,textureBlendMapID);
-		shaderTerrain.setInt("textureBlendMap",4);
+		shaderTerrain.setInt("blendMapTexture",4);
 
 		shaderTerrain.setVectorFloat2("scaleUV", glm::value_ptr(glm::vec2(30, 30)));
 		terrain.setPosition(glm::vec3(100, 0, 100));
