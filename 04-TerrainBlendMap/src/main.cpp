@@ -104,7 +104,11 @@ Model guardianModelAnimate;
 // Cybog
 Model cyborgModelAnimate;
 // Terrain model instance
-Terrain terrain(-1, -1, 200, 8, "../Textures/heightmap.png");
+Model CarlModelAnimate;
+//Carl Model
+Model mixiamoModel_example;
+//Mixiamo model
+Terrain terrain(-1, -1, 200, 4, "../Textures/heightmap3.png");
 
 GLuint textureCespedID, textureWallID, textureWindowID, textureHighwayID, textureLandingPadID;
 GLuint skyboxTextureID;
@@ -141,13 +145,15 @@ glm::mat4 modelMatrixMayow = glm::mat4(1.0f);
 glm::mat4 modelMatrixCowboy = glm::mat4(1.0f);
 glm::mat4 modelMatrixGuardian = glm::mat4(1.0f);
 glm::mat4 modelMatrixCyborg = glm::mat4(1.0f);
+glm::mat4 modelMatrixCarl = glm::mat4(1.0f); 
+glm::mat4 modelMatrixMixiamo = glm::mat4(1.0f);
 
 int animationMayowIndex = 1;
 float rotDartHead = 0.0, rotDartLeftArm = 0.0, rotDartLeftHand = 0.0, rotDartRightArm = 0.0, rotDartRightHand = 0.0, rotDartLeftLeg = 0.0, rotDartRightLeg = 0.0;
 float rotBuzzHead = 0.0, rotBuzzLeftArm = 0.0, rotBuzzLeftForeArm = 0.0, rotBuzzLeftHand = 0.0;
 int modelSelected = 0;
 bool enableCountSelected = true;
-
+int animationMixiamoIndex =0;
 // Variables to animations keyframes
 bool saveFrame = false, availableSave = true;
 std::ofstream myfile;
@@ -371,6 +377,13 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cyborgModelAnimate.loadModel("../models/cyborg/cyborg.fbx");
 	cyborgModelAnimate.setShader(&shaderMulLighting);
 
+	//Robot Model Animate 
+	CarlModelAnimate.loadModel("../models/robot/model.fbx");  
+	CarlModelAnimate.setShader(&shaderMulLighting); 
+
+	//Mixiamo animate
+	mixiamoModel_example.loadModel("../models/mixiamo/mix.fbx");
+	mixiamoModel_example.setShader(&shaderMulLighting);
 	// Terreno
 	terrain.init();
 	terrain.setShader(&shaderTerrain);
@@ -400,9 +413,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	}
 
 	// Definiendo la textura a utilizar
-	Texture textureCesped("../Textures/grassy2.png");
+	Texture background("../Textures/newBlend/terraDry.jpg");
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
-	textureCesped.loadImage();
+	background.loadImage();
 	// Creando la textura con id 1
 	glGenTextures(1, &textureCespedID);
 	// Enlazar esa textura a una tipo de textura de 2D.
@@ -414,20 +427,20 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Verifica si se pudo abrir la textura
-	if (textureCesped.getData()) {
+	if (background.getData()) {
 		// Transferis los datos de la imagen a memoria
 		// Tipo de textura, Mipmaps, Formato interno de openGL, ancho, alto, Mipmaps,
 		// Formato interno de la libreria de la imagen, el tipo de dato y al apuntador
 		// a los datos
-		std::cout << "Numero de canales :=> " << textureCesped.getChannels() << std::endl;
-		glTexImage2D(GL_TEXTURE_2D, 0, textureCesped.getChannels() == 3 ? GL_RGB : GL_RGBA, textureCesped.getWidth(), textureCesped.getHeight(), 0,
-		textureCesped.getChannels() == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, textureCesped.getData());
+		std::cout << "Numero de canales :=> " << background.getChannels() << std::endl;
+		glTexImage2D(GL_TEXTURE_2D, 0, background.getChannels() == 3 ? GL_RGB : GL_RGBA, background.getWidth(), background.getHeight(), 0,
+		background.getChannels() == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, background.getData());
 		// Generan los niveles del mipmap (OpenGL es el ecargado de realizarlos)
 		glGenerateMipmap(GL_TEXTURE_2D);
 	} else
 		std::cout << "Failed to load texture" << std::endl;
 	// Libera la memoria de la textura
-	textureCesped.freeImage();
+	background.freeImage();
 
 	// Definiendo la textura a utilizar
 	Texture textureWall("../Textures/whiteWall.jpg");
@@ -536,7 +549,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	textureLandingPad.freeImage(); // Liberamos memoria
 
 	// Definiendo la textura
-	Texture textureBlendMap("../Textures/blendMap2025.png");
+	Texture textureBlendMap("../Textures/blendMapP4.png");
 	textureBlendMap.loadImage(); // Cargar la textura
 	glGenTextures(1,&textureBlendMapID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureBlendMapID); // Se enlaza la textura
@@ -555,7 +568,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		textureBlendMap.freeImage(); // Liberamos memoria
 
 	// Definiendo la textura
-	Texture textureB("../Textures/path.png");
+	Texture textureB("../Textures/newBlend/terra.jpg");
 	textureB.loadImage(); // Cargar la textura
 	glGenTextures(1,&textureBID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureBID); // Se enlaza la textura
@@ -574,7 +587,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		textureB.freeImage(); // Liberamos memoria
 
 	// Definiendo la textura
-	Texture textureR("../Textures/mud.png");
+	Texture textureR("../Textures/newBlend/Grass.jpg");
 	textureR.loadImage(); // Cargar la textura
 	glGenTextures(1,&textureRID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureRID); // Se enlaza la textura
@@ -592,8 +605,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Fallo la carga de textura" << std::endl;
 		textureR.freeImage(); // Liberamos memoria
 
-		// Definiendo la textura
-	Texture textureG("../Textures/grassFlowers.png");
+	// Definiendo la textura
+	Texture textureG("../Textures/newBlend/Leaf.jpg");
 	textureG.loadImage(); // Cargar la textura
 	glGenTextures(1,&textureGID); // Creando el id de la textura del landingpad
 	glBindTexture(GL_TEXTURE_2D, textureGID); // Se enlaza la textura
@@ -666,7 +679,8 @@ void destroy() {
 	cowboyModelAnimate.destroy();
 	guardianModelAnimate.destroy();
 	cyborgModelAnimate.destroy();
-
+	CarlModelAnimate.destroy();  
+	mixiamoModel_example.destroy();
 	// Terrains objects Delete
 	terrain.destroy();
 
@@ -877,7 +891,8 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 2 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 		modelMatrixBuzz = glm::translate(modelMatrixBuzz, glm::vec3(0.0, 0.0, -0.02));
 
-	// Controles de mayow
+	// Controles de mayow 
+	/*
 	if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
 		modelMatrixMayow = glm::rotate(modelMatrixMayow, 0.02f, glm::vec3(0, 1, 0));
 		animationMayowIndex = 0;
@@ -892,8 +907,42 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
 		animationMayowIndex = 0;
+	}*/
+
+	// Controles robot carl 
+ 
+    if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_LEFT)) 
+	{ 
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,0.02f,glm::vec3(0,1,0)); 
+		CarlModelAnimate.setAnimationIndex(2); 
+	}  
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_RIGHT)){ 
+		modelMatrixCarl = glm::rotate(modelMatrixCarl,-0.02f,glm::vec3(0,1,0)); 
+		CarlModelAnimate.setAnimationIndex(2); 
+	} 
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_UP)){ 
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,0.02)); 
+		CarlModelAnimate.setAnimationIndex(0); 
+	} 
+	if(modelSelected==1 && glfwGetKey(window,GLFW_KEY_DOWN)){ 
+		modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(0,0,-0.02)); 
+		CarlModelAnimate.setAnimationIndex(0); 
+	} 
+	if(modelSelected==1 && !glfwGetKey(window,GLFW_KEY_DOWN) && !glfwGetKey(window,GLFW_KEY_UP) ){ 
+		CarlModelAnimate.setAnimationIndex(2); 
 	}
 
+	// Animation texting
+
+	if(glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
+		animationMixiamoIndex =0;
+	}else if(glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
+		animationMixiamoIndex=1;
+	}else if(glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
+		animationMixiamoIndex=5;
+	}else if(glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS){
+		animationMixiamoIndex=3;
+	}
 	glfwPollEvents();
 	return continueApplication;
 }
@@ -933,6 +982,9 @@ void applicationLoop() {
 
 	modelMatrixCyborg = glm::translate(modelMatrixCyborg, glm::vec3(5.0f, 0.05, 0.0f));
 
+	modelMatrixCarl = glm::translate(modelMatrixCarl,glm::vec3(2.0,0.16,0.0)); 
+	modelMatrixMixiamo = glm::translate(modelMatrixMixiamo,glm::vec3(1.5,0.16,0.0));
+	
 	// Variables to interpolation key frames
 	fileName = "../animaciones/animation_dart_joints.txt";
 	keyFramesDartJoints = getKeyRotFrames(fileName);
@@ -1224,6 +1276,45 @@ void applicationLoop() {
 		cyborgModelAnimate.setAnimationIndex(1);
 		cyborgModelAnimate.render(modelMatrixCyborgBody);
 
+		///Carlbot 
+        //Calculate normals for changing direction  
+ 
+        glm::vec3 ejey_carl = glm::normalize(terrain.getNormalTerrain(modelMatrixCarl[3][0], modelMatrixCarl[3][2])); 
+        glm::vec3 ejex_carl = glm::vec3(modelMatrixCarl[0]); 
+        glm::vec3 ejez_carl = glm::normalize(glm::cross(ejex_carl , ejey_carl )); 
+        ejex_carl  = glm::normalize(glm::cross(ejey_carl , ejez_carl )); 
+        modelMatrixCarl[0] = glm::vec4(ejex_carl , 0.0); 
+        modelMatrixCarl[1] = glm::vec4(ejey_carl , 0.0); 
+        modelMatrixCarl[2] = glm::vec4(ejez_carl , 0.0); 
+         
+        // Test if modelMatrixCarl is a vector or if y returns the vector (x,y,z) 
+         
+        modelMatrixCarl[3][1] = 0.19 + terrain.getHeightTerrain(modelMatrixCarl[3][0], modelMatrixCarl[3][2]); 
+        //modelMatrixCarl[3].y = terrain.getHeightTerrain(modelMatrixCarl[3].x,modelMatrixCarl[3].z); 
+		 
+        glm::mat4 modelMatrixCarlBody = glm::mat4(modelMatrixCarl); 
+        modelMatrixCarlBody = glm::scale(modelMatrixCarlBody,glm::vec3(1.0f));
+		CarlModelAnimate.render(modelMatrixCarlBody);
+
+		//New Mixiamo model
+
+		ejey = glm::normalize(terrain.getNormalTerrain(modelMatrixMixiamo[3][0], modelMatrixMixiamo[3][2])); 
+        ejex= glm::vec3(modelMatrixMixiamo[0]); 
+        ejez = glm::normalize(glm::cross(ejex , ejey )); 
+        ejex  = glm::normalize(glm::cross(ejey , ejez )); 
+        modelMatrixMixiamo[0] = glm::vec4(ejex , 0.0); 
+        modelMatrixMixiamo[1] = glm::vec4(ejey , 0.0); 
+        modelMatrixMixiamo[2] = glm::vec4(ejez, 0.0); 
+         
+        // Test if modelMatrixCarl is a vector or if y returns the vector (x,y,z) 
+         
+        modelMatrixMixiamo[3][1] = 0.19 + terrain.getHeightTerrain(modelMatrixMixiamo[3][0], modelMatrixMixiamo[3][2]); 
+        //modelMatrixCarl[3].y = terrain.getHeightTerrain(modelMatrixCarl[3].x,modelMatrixCarl[3].z); 
+		 
+        glm::mat4 modelMatrixMixiamoBody = glm::mat4(modelMatrixMixiamo); 
+        modelMatrixMixiamoBody = glm::scale(modelMatrixMixiamoBody,glm::vec3(2.0f));
+		mixiamoModel_example.setAnimationIndex(animationMixiamoIndex);
+		mixiamoModel_example.render(modelMatrixMixiamoBody);
 		/*******************************************
 		 * Skybox
 		 *******************************************/

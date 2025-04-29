@@ -39,6 +39,8 @@
 
 #include "Headers/AnimationUtils.h"
 
+#include "Headers/Colisiones.h"
+
 #define ARRAY_SIZE_IN_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
 int screenWidth;
@@ -63,6 +65,9 @@ Box boxWalls;
 Box boxHighway;
 Box boxLandingPad;
 Sphere esfera1(10, 10);
+Box boxCollider;
+Sphere sphereCollider(10,10);
+Cylinder rayModel(10,10,1.0,1.0,1.0);
 // Models complex instances
 Model modelRock;
 Model modelAircraft;
@@ -216,6 +221,17 @@ std::vector<float> lamp2Orientation = {
 double deltaTime;
 double currTime, lastTime;
 
+// Jump variables
+bool isJump = false;
+float GRAVITY = 1.81f;
+double tmv =0;
+double starTimeJump=0;
+
+// Varibles de colliders
+
+std::map<std::string, std::tuple<AbstractModel::OBB,glm::mat4,glm::mat4>> collidersOBB;
+std::map<std::string, std::tuple<AbstractModel::SBB,glm::mat4,glm::mat4>> collidersSBB;
+
 // Variables animacion maquina de estados eclipse
 const float avance = 0.1;
 const float giroEclipse = 0.5f;
@@ -310,6 +326,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	esfera1.init();
 	esfera1.setShader(&shaderMulLighting);
+
+	boxCollider.init();
+	boxCollider.setShader(&shader);
+	boxCollider.setColor(glm::vec4(1.0));
+
+	sphereCollider.init();
+	sphereCollider.setShader(&shader);
+	sphereCollider.setColor(glm::vec4(1.0));
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -668,6 +692,9 @@ void destroy() {
 	boxHighway.destroy();
 	boxLandingPad.destroy();
 	esfera1.destroy();
+	boxCollider.destroy();
+	sphereCollider.destroy();
+	rayModel.destroy();
 
 	// Custom objects Delete
 	modelAircraft.destroy();
@@ -933,6 +960,13 @@ bool processInput(bool continueApplication) {
 	else if (modelSelected == 0 && glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
 		modelMatrixMayow = glm::translate(modelMatrixMayow, glm::vec3(0.0, 0.0, -0.02));
 		animationMayowIndex = 0;
+	}
+
+	bool keySpaceStatus = glfwGetKey(window,GLFW_KEY_SPACE);
+	if(!isJump &&  keySpaceStatus){
+		isJump =true;
+		starTimeJump = currTime;
+		tmv =0;
 	}
 
 	glfwPollEvents();
@@ -1347,7 +1381,14 @@ void applicationLoop() {
 		modelMatrixMayow[0] = glm::vec4(ejex, 0.0);
 		modelMatrixMayow[1] = glm::vec4(ejey, 0.0);
 		modelMatrixMayow[2] = glm::vec4(ejez, 0.0);
-		modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		//modelMatrixMayow[3][1] = terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		float current_y=terrain.getHeightTerrain(modelMatrixMayow[3][0], modelMatrixMayow[3][2]);
+		modelMatrixMayow[3][1] = -GRAVITY * tmv*tmv + 3.4 * tmv + current_y;
+		tmv = currTime-starTimeJump;
+		if(modelMatrixMayow[3][1] < current_y){
+			isJump=false;
+			modelMatrixMayow[3][1] = current_y;
+		}
 		glm::mat4 modelMatrixMayowBody = glm::mat4(modelMatrixMayow);
 		modelMatrixMayowBody = glm::scale(modelMatrixMayowBody, glm::vec3(0.021f));
 		mayowModelAnimate.setAnimationIndex(animationMayowIndex);
@@ -1386,7 +1427,25 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 
-		
+		//Creacion de collider
+		AbstractModel::SBB rockCollider;
+		glm::mat4 modelMatrixRockCollider = glm::mat4(matrixModelRock);
+		//modelMatrixRockCollider = glm::scale(modelMatrixRockCollider,glm::vec3(1.0)); // debe coincidir con el scale del modelo original
+		modelMatrixRockCollider = glm::translate(modelMatrixRockCollider,
+			modelRock.getSbb().c);
+		rockCollider.ratio = modelRock.getSbb().ratio*1.0; // according to scale of the model
+		rockCollider.c = modelMatrixRockCollider[3];
+		addOrUpdateColliders(collidersSBB,"rock",rockCollider,matrixModelRock);
+
+		// Render de Colliders
+		for (auto it = collidersSBB.begin(); it != collidersSBB.end();it++){
+			glm::mat4 modelMatrixCollider = glm::mat4(1.0);
+			modelMatrixCollider = glm::translate(modelMatrixCollider,std::get<0>( it ->second).c); // Re meber the map has two elements key, value
+			modelMatrixCollider = glm::scale(modelMatrixCollider,
+				glm::vec3(std::get<0>(it->second).ratio*1.0));
+			sphereCollider.enableWireMode();
+			sphereCollider.render(modelMatrixCollider);
+		}
 		// Animaciones por keyframes dart Vader
 		// Para salvar los keyframes
 		if(record && modelSelected == 1){

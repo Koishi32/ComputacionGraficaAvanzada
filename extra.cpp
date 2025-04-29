@@ -1435,7 +1435,7 @@ void cars_behavoir(){
  }
 
 int main(int argc, char **argv) {
-    for (int i=0;i < LampPlantPostion.size();i++){
+    for (int i=0;i < LampPlantPostion2.size();i++){
 		LampPlantPostion2[i] = TransformGIMPCoordenatesToOpenGLPixels(LampPlantPostion2[i]);
 	}
 	init(800, 700, "Window GLFW", false);
